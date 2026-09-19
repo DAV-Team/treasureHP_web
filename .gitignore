@@ -1,0 +1,52 @@
+# ---- Secrets: never commit real environment files ----
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# ---- Dependencies ----
+node_modules/
+
+# ---- Build output ----
+dist/
+dist-ssr/
+build/
+*.tsbuildinfo
+
+# ---- Test and coverage output ----
+coverage/
+test-results/
+playwright-report/
+blob-report/
+.vitest-cache/
+
+# ---- Packages made by scripts/package.sh ----
+release/
+
+# ---- Logs ----
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ---- Local Docker data (if a volume is ever bind-mounted) ----
+mongo-data/
+data/db/
+
+# ---- OS files ----
+.DS_Store
+Thumbs.db
+._*
+
+# ---- Editors ----
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.sw?
+
+# ---- Local tooling ----
+.claude/
+*.local

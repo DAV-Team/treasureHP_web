@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Be Vietnam Pro', ui-sans-serif, system-ui, sans-serif;
+  --font-script: 'Pacifico', cursive;
+  --font-brand: 'Baloo 2', 'Be Vietnam Pro', sans-serif;
+
+  --color-navy: #12294D;
+  --color-navy-soft: #1B3A6B;
+  --color-navy-deep: #0B1E3D;
+  --color-gold: #F5B942;
+  --color-paper: #F8FAFC;
+
+  --animate-twinkle: twinkle 2.6s ease-in-out infinite;
+  --animate-float: float 5s ease-in-out infinite;
+
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.35; transform: scale(0.85); }
+    50% { opacity: 1; transform: scale(1.1); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+}
+
+:root {
+  color-scheme: light;
+  font-family: var(--font-sans);
+  background: var(--color-paper);
+  color: #172033;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Leaflet controls dressed like Google Maps: white, borderless, soft shadow. */
+.leaflet-touch .leaflet-bar {
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.leaflet-touch .leaflet-bar a {
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  font-size: 22px;
+  color: #666;
+}
+
+.leaflet-touch .leaflet-bar a:hover {
+  color: #222;
+  background-color: #f4f4f4;
+}
+
+.leaflet-container .leaflet-control-attribution {
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.8);
+}

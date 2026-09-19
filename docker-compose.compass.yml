@@ -1,0 +1,8 @@
+# Opt-in override that lets MongoDB Compass reach the Docker database:
+#   docker compose -f docker-compose.prod.yml -f docker-compose.compass.yml up -d mongo
+# Bound to 127.0.0.1 on purpose: this Mongo has no authentication, so it must never listen on a public interface.
+# Port 27018 avoids clashing with a Mongo already running on the host's 27017.
+services:
+  mongo:
+    ports:
+      - '127.0.0.1:${MONGO_COMPASS_PORT:-27018}:27017'
