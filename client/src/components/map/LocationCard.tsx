@@ -1,10 +1,17 @@
-import { ArrowRight, Star } from 'lucide-react';
+import { ArrowRight, Check, Plus, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { categories } from '../../lib/categories';
 import type { MapLocation } from '../../lib/mapLocations';
 import { SafeImage } from '../common/SafeImage';
 
-export function LocationCard({ location, className = '' }: { location: MapLocation; className?: string }) {
+interface LocationCardProps {
+  location: MapLocation;
+  className?: string;
+  /** Set while the player is choosing journey locations. */
+  journey?: { picked: boolean; disabled: boolean; onToggle: () => void };
+}
+
+export function LocationCard({ location, className = '', journey }: LocationCardProps) {
   const category = categories[location.category];
   return (
     <article className={`overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-slate-100 ${className}`}>
@@ -18,7 +25,12 @@ export function LocationCard({ location, className = '' }: { location: MapLocati
         <p className="mt-3 flex items-center gap-1 text-sm font-bold text-navy">
           <Star className="size-4 fill-gold text-gold" />+{location.xp} XP
         </p>
-        <Link to={`/locations/${location.id}`} className="mt-3 flex min-h-10 items-center justify-center gap-2 rounded-full bg-navy px-4 text-sm font-bold text-white transition hover:bg-navy-soft">
+        {journey && (
+          <button type="button" onClick={journey.onToggle} disabled={!journey.picked && journey.disabled} aria-pressed={journey.picked} className={`mt-3 flex min-h-10 w-full items-center justify-center gap-2 rounded-full border px-4 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${journey.picked ? 'border-emerald-600 bg-emerald-50 text-emerald-700' : 'border-navy text-navy hover:bg-slate-50'}`}>
+            {journey.picked ? <><Check className="size-4" />Đã thêm vào hành trình</> : <><Plus className="size-4" />Thêm vào hành trình</>}
+          </button>
+        )}
+        <Link to={`/locations/${location.id}`} className={`${journey ? 'mt-2' : 'mt-3'} flex min-h-10 items-center justify-center gap-2 rounded-full bg-navy px-4 text-sm font-bold text-white transition hover:bg-navy-soft`}>
           Xem chi tiết <ArrowRight className="size-4" />
         </Link>
       </div>

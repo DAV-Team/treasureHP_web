@@ -7,13 +7,14 @@ interface ConfirmDialogProps {
   title: string;
   message: string;
   confirmLabel?: string;
+  busyLabel?: string;
   busy?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
 // A destructive action always goes through this instead of window.confirm, so it is styled and testable.
-export function ConfirmDialog({ isOpen, title, message, confirmLabel = 'Xóa', busy = false, onConfirm, onCancel }: ConfirmDialogProps) {
+export function ConfirmDialog({ isOpen, title, message, confirmLabel = 'Xóa', busyLabel = 'Đang xóa...', busy = false, onConfirm, onCancel }: ConfirmDialogProps) {
   return (
     <Modal isOpen={isOpen} onClose={onCancel} title={title} className="max-w-md">
       <div className="flex gap-3">
@@ -22,7 +23,7 @@ export function ConfirmDialog({ isOpen, title, message, confirmLabel = 'Xóa', b
       </div>
       <div className="mt-6 flex justify-end gap-3">
         <Button variant="outline" onClick={onCancel} disabled={busy}>Hủy</Button>
-        <Button onClick={onConfirm} disabled={busy} className="bg-rose-600 hover:bg-rose-700">{busy ? 'Đang xóa...' : confirmLabel}</Button>
+        <Button onClick={onConfirm} disabled={busy} className="bg-rose-600 hover:bg-rose-700">{busy ? busyLabel : confirmLabel}</Button>
       </div>
     </Modal>
   );

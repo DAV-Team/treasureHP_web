@@ -2,12 +2,14 @@ import { Award, BookOpen, Compass, Flag, MapPin, Trophy, UtensilsCrossed, type L
 import { useEffect, useState } from 'react';
 import { Avatar } from '../components/common/Avatar';
 import { Badge } from '../components/common/Badge';
+import { FinishJourneyButton } from '../components/FinishJourneyButton';
 import { Navbar } from '../components/common/Navbar';
 import { ProgressBar } from '../components/common/ProgressBar';
 import { SafeImage } from '../components/common/SafeImage';
 import { useAuth } from '../hooks/useAuth';
 import { getMyBadges } from '../services/badges';
 import { getLocations } from '../services/locations';
+import { getCurrentJourney, type Journey } from '../services/quests';
 import { getUserProgress, type UserProgress } from '../services/progress';
 
 interface BadgeView { key: string; name: string; description: string; locked: boolean }
@@ -32,6 +34,7 @@ export function ProfilePage() {
   const { user } = useAuth();
   const [badges, setBadges] = useState<BadgeView[]>(demoBadges);
   const [progress, setProgress] = useState<UserProgress[] | null>(null);
+  const [journey, setJourney] = useState<Journey | null>(null);
   const [locationNames, setLocationNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -40,6 +43,7 @@ export function ProfilePage() {
       .then((data) => { if (data.length) setBadges(data.map((badge) => ({ key: badge._id, name: badge.name, description: badge.description, locked: !badge.unlocked }))); })
       .catch(() => undefined);
     getUserProgress().then(setProgress).catch(() => undefined);
+    getCurrentJourney().then(setJourney).catch(() => undefined);
     getLocations()
       .then((data) => setLocationNames(Object.fromEntries(data.map((location) => [location._id, location.name]))))
       .catch(() => undefined);
@@ -50,6 +54,9 @@ export function ProfilePage() {
   const xp = user?.totalXp ?? 150;
   const xpPerLevel = 100;
   const completed = progress?.filter((item) => item.status === 'completed') ?? [];
+  // Without a started journey, every location counts.
+  const journeyIds = journey ? journey.locationIds : Object.keys(locationNames);
+  const journeyComplete = progress !== null && journeyIds.length > 0 && journeyIds.every((id) => completed.some((item) => item.locationId === id));
   const stats = progress
     ? [
       { icon: MapPin, color: 'text-rose-500', value: completed.length, label: 'Địa điểm đã khám phá' },
@@ -96,6 +103,15 @@ export function ProfilePage() {
         </aside>
 
         <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100 sm:p-6">
+          {journeyComplete && (
+            <div className="mb-6 flex flex-col gap-3 rounded-2xl bg-gradient-to-r from-navy-deep to-navy p-4 text-white sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="font-extrabold">Bạn đã hoàn thành hành trình!</h2>
+                <p className="text-sm text-sky-100">Kết thúc để lưu lại thành tích và bắt đầu hành trình mới.</p>
+              </div>
+              <FinishJourneyButton className="shrink-0 bg-gold text-navy-deep hover:brightness-105" />
+            </div>
+          )}
           <div role="tablist" className="flex border-b border-slate-200">
             {([['badges', 'Huy hiệu'], ['history', 'Lịch sử']] as const).map(([id, label]) => (
               <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)} className={`-mb-px px-5 py-3 text-sm font-bold transition ${tab === id ? 'border-b-2 border-navy text-navy' : 'text-slate-400 hover:text-slate-600'}`}>{label}</button>

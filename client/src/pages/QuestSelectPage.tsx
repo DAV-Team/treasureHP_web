@@ -7,8 +7,8 @@ import { categories, categoryOrder, isCategory } from '../lib/categories';
 
 const durations = ['30 phút', '1 giờ', '2+ giờ'];
 const choices = [
-  { type: 'full', name: 'Full Quest', description: 'Khám phá toàn bộ những địa điểm nổi bật của Hải Phòng theo một hành trình hoàn chỉnh.', action: 'Bắt đầu', image: '/images/card-full-quest.jpg', variant: 'primary', recommended: true },
-  { type: 'mini', name: 'Mini Quest', description: 'Chọn 1-3 địa điểm bạn yêu thích và tạo hành trình riêng.', action: 'Tùy chọn', image: '/images/card-mini-quest.jpg', variant: 'outline', recommended: false },
+  { type: 'full', name: 'Full Quest', description: 'Khám phá trọn vẹn 5 địa điểm nổi bật của Hải Phòng theo một hành trình hoàn chỉnh.', action: 'Bắt đầu', image: '/images/card-full-quest.jpg', variant: 'primary', recommended: true },
+  { type: 'mini', name: 'Mini Quest', description: 'Chọn đúng 3 địa điểm bạn yêu thích và tạo hành trình riêng.', action: 'Tùy chọn', image: '/images/card-mini-quest.jpg', variant: 'outline', recommended: false },
   { type: 'explore', name: 'Explore Freely', description: 'Tự do khám phá bất kỳ địa điểm nào trên bản đồ.', action: 'Khám phá', image: '/images/card-explore.jpg', variant: 'outline', recommended: false },
 ] as const;
 

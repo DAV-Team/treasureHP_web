@@ -34,4 +34,33 @@ describe('MapPage', () => {
     fireEvent.change(screen.getByLabelText('Tìm địa điểm'), { target: { value: 'không có gì' } });
     expect(screen.getByRole('status')).toHaveTextContent('Không có địa điểm nào khớp');
   });
+
+  it('lets a Mini Quest pick exactly 3 locations before starting', () => {
+    renderMap('/map?type=mini');
+    const start = screen.getByRole('button', { name: 'Bắt đầu hành trình' });
+    expect(screen.getByText('Đã chọn 0/3')).toBeInTheDocument();
+    expect(start).toBeDisabled();
+
+    for (const name of ['Nhà hát thành phố Hải Phòng', 'Đền Nghè', 'Chùa Dư Hàng']) {
+      fireEvent.click(screen.getByRole('checkbox', { name: `Chọn ${name} cho hành trình` }));
+    }
+    expect(screen.getByText('Đã chọn 3/3')).toBeInTheDocument();
+    expect(start).toBeEnabled();
+    // Once 3 are picked nothing else can be added, but a pick can still be removed.
+    expect(screen.getByRole('checkbox', { name: 'Chọn Bảo tàng Hải Phòng cho hành trình' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Chọn Đền Nghè cho hành trình' }));
+    expect(screen.getByText('Đã chọn 2/3')).toBeInTheDocument();
+    expect(start).toBeDisabled();
+  });
+
+  it('starts a Full Quest with every location already picked', () => {
+    renderMap('/map?type=full');
+    expect(screen.getByText('Đã chọn 5/5')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Bắt đầu hành trình' })).toBeEnabled();
+  });
+
+  it('shows no journey panel when just exploring', () => {
+    renderMap('/map?type=explore');
+    expect(screen.queryByRole('region', { name: 'Hành trình' })).not.toBeInTheDocument();
+  });
 });

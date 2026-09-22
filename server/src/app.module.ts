@@ -11,6 +11,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { LocationsModule } from './locations/locations.module.js';
 import { ChallengesModule } from './challenges/challenges.module.js';
 import { ProgressModule } from './progress/progress.module.js';
+import { QuestsModule } from './quests/quests.module.js';
 import { AdminModule } from './admin/admin.module.js';
 
 @Module({
@@ -34,6 +35,7 @@ import { AdminModule } from './admin/admin.module.js';
     ChallengesModule,
     LocationsModule,
     ProgressModule,
+    QuestsModule,
     AdminModule,
   ],
   controllers: [AppController],

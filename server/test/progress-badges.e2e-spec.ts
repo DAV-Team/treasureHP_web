@@ -213,4 +213,99 @@ describe('Progress, XP & badges (e2e)', () => {
       unlocked: true,
     });
   });
+  describe('finishing a journey', () => {
+    async function completeLocations(player: UserSession, locationIds: string[]) {
+      const ChallengeModel = connection.model('Challenge', ChallengeSchema);
+      for (const id of locationIds) {
+        const challenge = await ChallengeModel.findOne({ locationId: new Types.ObjectId(id) }).lean().exec();
+        for (const question of challenge!.questions) {
+          await request(app.getHttpServer())
+            .post(`/locations/${id}/challenge/answer`)
+            .set(auth(player))
+            .send({ questionOrder: question.order, selectedOption: question.correctOption })
+            .expect(201);
+        }
+        await request(app.getHttpServer()).post(`/locations/${id}/complete`).set(auth(player)).expect(201);
+      }
+    }
+
+    async function allLocationIds() {
+      const locations = await request(app.getHttpServer()).get('/locations').expect(200);
+      return locations.body.map((location: { _id: string }) => location._id) as string[];
+    }
+
+    it('starts a journey only with exactly the required number of distinct locations', async () => {
+      const player = await register('start@example.com');
+      const ids = await allLocationIds();
+      await request(app.getHttpServer()).post('/quests/start').send({ type: 'mini', locationIds: ids.slice(0, 3) }).expect(401);
+      const start = (type: string, locationIds: string[]) =>
+        request(app.getHttpServer()).post('/quests/start').set(auth(player)).send({ type, locationIds });
+
+      await start('mini', ids.slice(0, 2)).expect(400);
+      await start('mini', ids.slice(0, 4)).expect(400);
+      await start('mini', [ids[0], ids[0], ids[1]]).expect(400);
+      await start('full', ids.slice(0, 3)).expect(400);
+      await start('explore', ids.slice(0, 3)).expect(400);
+      await start('mini', [ids[0], ids[1], '507f1f77bcf86cd799439011']).expect(400);
+
+      const started = await start('mini', ids.slice(0, 3)).expect(201);
+      expect(started.body.journey).toMatchObject({ type: 'mini', locationIds: ids.slice(0, 3) });
+      const current = await request(app.getHttpServer()).get('/quests/current').set(auth(player)).expect(200);
+      expect(current.body.journey.locationIds).toEqual(ids.slice(0, 3));
+
+      // Starting again replaces the unfinished journey.
+      await start('full', ids).expect(201);
+      const replaced = await request(app.getHttpServer()).get('/quests/current').set(auth(player)).expect(200);
+      expect(replaced.body.journey).toMatchObject({ type: 'full' });
+      expect(replaced.body.journey.locationIds).toHaveLength(5);
+    });
+
+    it('finishes a mini journey after just its 3 locations, without unlocking City Master', async () => {
+      const player = await register('mini@example.com');
+      const ids = await allLocationIds();
+      const picked = ids.slice(0, 3);
+      await request(app.getHttpServer()).post('/quests/start').set(auth(player)).send({ type: 'mini', locationIds: picked }).expect(201);
+
+      await completeLocations(player, picked.slice(0, 2));
+      await request(app.getHttpServer()).post('/quests/finish').set(auth(player)).expect(400);
+      await completeLocations(player, picked.slice(2));
+
+      const finished = await request(app.getHttpServer()).post('/quests/finish').set(auth(player)).expect(201);
+      expect(finished.body).toEqual({ finished: true, type: 'mini', locationsCompleted: 3 });
+      const current = await request(app.getHttpServer()).get('/quests/current').set(auth(player)).expect(200);
+      expect(current.body.journey).toBeNull();
+      const badges = await request(app.getHttpServer()).get('/users/me/badges').set(auth(player)).expect(200);
+      expect(badges.body.find((badge: { code: string }) => badge.code === 'city_master').unlocked).toBe(false);
+    });
+
+    it('requires JWT and refuses to finish before every location is completed', async () => {
+      await request(app.getHttpServer()).post('/quests/finish').expect(401);
+      const player = await register('early@example.com');
+      await completeLocations(player, [locationId]);
+      await request(app.getHttpServer()).post('/quests/finish').set(auth(player)).expect(400);
+    });
+
+    it('records the journey, unlocks City Master, resets progress and keeps XP', async () => {
+      const player = await register('finish@example.com');
+      const locations = await request(app.getHttpServer()).get('/locations').expect(200);
+      const ids = locations.body.map((location: { _id: string }) => location._id);
+      await completeLocations(player, ids);
+      const before = await request(app.getHttpServer()).get('/users/me').set(auth(player)).expect(200);
+
+      const finished = await request(app.getHttpServer()).post('/quests/finish').set(auth(player)).expect(201);
+      expect(finished.body).toEqual({ finished: true, type: 'full', locationsCompleted: ids.length });
+
+      const progress = await request(app.getHttpServer()).get('/users/me/progress').set(auth(player)).expect(200);
+      expect(progress.body).toHaveLength(0);
+      const after = await request(app.getHttpServer()).get('/users/me').set(auth(player)).expect(200);
+      expect(after.body.totalXp).toBe(before.body.totalXp);
+      const badges = await request(app.getHttpServer()).get('/users/me/badges').set(auth(player)).expect(200);
+      expect(badges.body.find((badge: { code: string }) => badge.code === 'city_master')).toMatchObject({ unlocked: true });
+
+      // The new journey starts clean, and finishing again is refused.
+      await request(app.getHttpServer()).post('/quests/finish').set(auth(player)).expect(400);
+      const list = await request(app.getHttpServer()).get('/locations').set(auth(player)).expect(200);
+      expect(list.body.every((location: { progress: { status: string } }) => location.progress.status === 'available')).toBe(true);
+    });
+  });
 });
