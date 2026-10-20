@@ -8,9 +8,16 @@ import { UserBadge, UserBadgeDocument } from '../badges/schemas/user-badge.schem
 import { Challenge, ChallengeDocument } from '../challenges/schemas/challenge.schema.js';
 import { Location, LocationDocument } from '../locations/schemas/location.schema.js';
 import { UserProgress, UserProgressDocument } from '../progress/schemas/user-progress.schema.js';
+import { SettingsService } from '../settings/settings.service.js';
+import { UploadsService } from '../uploads/uploads.service.js';
 import type { SafeUser } from '../users/interfaces/safe-user.interface.js';
 import { User, UserDocument } from '../users/schemas/user.schema.js';
 import type { AdminUpdateUserDto } from './dto/update-user.dto.js';
+
+interface UploadedImage {
+  buffer: Buffer;
+  mimetype: string;
+}
 
 @Injectable()
 export class AdminService implements OnModuleInit {
@@ -22,6 +29,8 @@ export class AdminService implements OnModuleInit {
     @InjectModel(Badge.name) private readonly badges: Model<BadgeDocument>,
     @InjectModel(UserProgress.name) private readonly progress: Model<UserProgressDocument>,
     @InjectModel(UserBadge.name) private readonly userBadges: Model<UserBadgeDocument>,
+    private readonly settings: SettingsService,
+    private readonly uploads: UploadsService,
   ) {}
 
   async onModuleInit() {
@@ -92,6 +101,21 @@ export class AdminService implements OnModuleInit {
   async deleteBadge(id: string) {
     const result = await this.remove(this.badges, id, 'Badge');
     await this.userBadges.deleteMany({ badgeId: new Types.ObjectId(id) });
+    return result;
+  }
+
+  async setLogo(file: UploadedImage) {
+    const previous = await this.settings.currentLogoUrl();
+    const logoUrl = await this.uploads.save(file, 'branding');
+    const result = await this.settings.setLogo(logoUrl);
+    await this.uploads.remove(previous);
+    return result;
+  }
+
+  async clearLogo() {
+    const previous = await this.settings.currentLogoUrl();
+    const result = await this.settings.clearLogo();
+    await this.uploads.remove(previous);
     return result;
   }
 

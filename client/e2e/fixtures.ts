@@ -8,7 +8,7 @@ const BLANK_TILE = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAA
 export const test = base.extend<{ stubExternalNetwork: void }>({
   stubExternalNetwork: [async ({ page }, use) => {
     await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.fulfill({ status: 200, contentType: 'text/css', body: '' }));
-    await page.route(/tile\.openstreetmap\.org|basemaps\.cartocdn\.com/, (route) => route.fulfill({ status: 200, contentType: 'image/png', body: BLANK_TILE }));
+    await page.route(/tile\.openstreetmap\.(org|fr)|basemaps\.cartocdn\.com/, (route) => route.fulfill({ status: 200, contentType: 'image/png', body: BLANK_TILE }));
     await use();
   }, { auto: true }],
 });

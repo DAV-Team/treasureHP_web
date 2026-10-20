@@ -15,6 +15,7 @@ import { rowLabel, type AdminRow, type AdminTab } from './admin/adminRows';
 import { BadgeForm } from './admin/BadgeForm';
 import { ChallengeForm } from './admin/ChallengeForm';
 import { LocationForm } from './admin/LocationForm';
+import { LogoSettings } from './admin/LogoSettings';
 import { UserEditor } from './admin/UserEditor';
 
 const tabs: Array<{ id: AdminTab; label: string }> = [
@@ -152,6 +153,8 @@ export function AdminPage() {
             </Card>
           ))}
         </section>
+
+        <LogoSettings />
 
         {notice && <p role="status" className="mt-6 flex items-center gap-2 rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-700"><CheckCircle2 className="size-4" />{notice}</p>}
 

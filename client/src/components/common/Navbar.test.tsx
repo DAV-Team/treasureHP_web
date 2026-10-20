@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
+import * as settingsApi from '../../services/settings';
 import { adminUser, makeAuthContext, playerUser } from '../../test/authContext';
 import { Navbar } from './Navbar';
 
@@ -35,5 +36,21 @@ describe('Navbar', () => {
     renderNavbar(makeAuthContext({ user: adminUser }));
     fireEvent.click(screen.getByRole('button', { name: /Quản trị viên/ }));
     expect(screen.getByRole('menuitem', { name: 'Quản trị' })).toHaveAttribute('href', '/admin');
+  });
+
+  it('shows the default mark until a custom logo loads, then swaps to it', async () => {
+    vi.spyOn(settingsApi, 'getAppSettings').mockResolvedValue({ logoUrl: '/uploads/branding/x.png' });
+    renderNavbar();
+    const image = await screen.findByRole('img', { name: 'Culture Quest' });
+    expect(image).toHaveAttribute('src', expect.stringContaining('/uploads/branding/x.png'));
+    vi.restoreAllMocks();
+  });
+
+  it('falls back to the default mark without a custom logo', async () => {
+    vi.spyOn(settingsApi, 'getAppSettings').mockResolvedValue({ logoUrl: null });
+    renderNavbar();
+    await screen.findByRole('link', { name: 'Đăng nhập' });
+    expect(screen.queryByRole('img', { name: 'Culture Quest' })).not.toBeInTheDocument();
+    vi.restoreAllMocks();
   });
 });

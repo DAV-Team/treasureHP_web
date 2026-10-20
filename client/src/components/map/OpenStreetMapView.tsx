@@ -17,16 +17,15 @@ interface OpenStreetMapViewProps {
 const noop = () => undefined;
 
 // Real street map that needs no API key, used until Google Maps is configured (or when it fails to load).
-// It is styled to look like Google Maps: Voyager tiles plus Google-like controls (see index.css).
+// Tiles come from the OSM France mirror (CARTO's free Voyager basemap has since been retired/requires a key).
 export function OpenStreetMapView({ locations, selectedId, onSelect, notice }: OpenStreetMapViewProps) {
   return (
     <div className="relative size-full min-h-72">
       <MapContainer center={[HAI_PHONG_CENTER.lat, HAI_PHONG_CENTER.lng]} zoom={12} zoomControl={false} attributionControl={false} className="size-full !bg-[#cfe8ea]" aria-label="Bản đồ Hải Phòng">
-        {/* CARTO Voyager: OpenStreetMap data in a light, muted style that reads much like Google Maps. `{r}` serves retina tiles. */}
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-          subdomains="abcd"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png"
+          subdomains="abc"
           maxZoom={20}
         />
         <ZoomControl position="topright" />

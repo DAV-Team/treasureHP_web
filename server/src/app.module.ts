@@ -12,6 +12,7 @@ import { LocationsModule } from './locations/locations.module.js';
 import { ChallengesModule } from './challenges/challenges.module.js';
 import { ProgressModule } from './progress/progress.module.js';
 import { QuestsModule } from './quests/quests.module.js';
+import { SettingsModule } from './settings/settings.module.js';
 import { AdminModule } from './admin/admin.module.js';
 
 @Module({
@@ -36,6 +37,7 @@ import { AdminModule } from './admin/admin.module.js';
     LocationsModule,
     ProgressModule,
     QuestsModule,
+    SettingsModule,
     AdminModule,
   ],
   controllers: [AppController],

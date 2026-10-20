@@ -4,7 +4,7 @@ Web game khám phá văn hóa Hải Phòng: đến địa điểm thật, giải
 
 | Thành phần | Công nghệ |
 | :--- | :--- |
-| `client/` | React 19, Vite, Tailwind CSS 4, Google Maps (hoặc OpenStreetMap/CARTO khi chưa có key) |
+| `client/` | React 19, Vite, Tailwind CSS 4, Google Maps (hoặc OpenStreetMap khi chưa có key) |
 | `server/` | NestJS, Mongoose, JWT |
 | Database | MongoDB 7, database `culture-quest` |
 | Chạy thật | Docker Compose: `mongo` + `server` + `client` (nginx phục vụ web và chuyển `/api` sang server) |
@@ -69,7 +69,7 @@ docker compose --env-file .env.production -f docker-compose.prod.yml run --rm --
 | `ADMIN_EMAIL` | Email tài khoản admin | `admin@culturequest.local` |
 | `ADMIN_PASSWORD` | Mật khẩu admin. **Bắt buộc.** Chỉ dùng khi tạo admin lần đầu lúc server khởi động; đổi sau đó ở trang **Cài đặt tài khoản** | `setup.sh` tự sinh |
 | `WEB_PORT` | Cổng website trên máy | `8080` |
-| `VITE_GOOGLE_MAPS_API_KEY` | Khóa Google Maps. Để trống thì bản đồ dùng OpenStreetMap/CARTO | trống |
+| `VITE_GOOGLE_MAPS_API_KEY` | Khóa Google Maps. Để trống thì bản đồ dùng OpenStreetMap | trống |
 | `VITE_GOOGLE_MAPS_MAP_ID` | Map ID Google (không bắt buộc) | trống |
 
 Đổi cổng hoặc mật khẩu xong: `docker compose --env-file .env.production -f docker-compose.prod.yml up -d`.

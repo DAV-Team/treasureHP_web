@@ -28,7 +28,7 @@ JWT_EXPIRES_IN=7d
 ADMIN_EMAIL=${ADMIN_EMAIL:-admin@culturequest.local}
 ADMIN_PASSWORD=$(random_hex 8)
 WEB_PORT=${WEB_PORT:-8080}
-# Khóa Google Maps được nhúng lúc build. Để trống thì bản đồ dùng OpenStreetMap/CARTO.
+# Khóa Google Maps được nhúng lúc build. Để trống thì bản đồ dùng OpenStreetMap.
 VITE_GOOGLE_MAPS_API_KEY=${VITE_GOOGLE_MAPS_API_KEY:-}
 VITE_GOOGLE_MAPS_MAP_ID=${VITE_GOOGLE_MAPS_MAP_ID:-}
 ENV

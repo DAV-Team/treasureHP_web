@@ -2,6 +2,8 @@ import { ChevronDown, LayoutDashboard, LogOut, MapPin, Menu, Search, Settings, T
 import { useContext, useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
+import { resolveUploadUrl } from '../../lib/uploads';
+import { getAppSettings } from '../../services/settings';
 import { Avatar } from './Avatar';
 
 const navItems = [
@@ -24,6 +26,12 @@ export function Navbar() {
   // Pages render without an AuthProvider in isolation (tests), so read the context leniently.
   const auth = useContext(AuthContext);
   const user = auth?.user ?? null;
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoFailed, setLogoFailed] = useState(false);
+
+  useEffect(() => {
+    getAppSettings().then((settings) => setLogoUrl(settings.logoUrl)).catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     if (!isUserMenuOpen) return undefined;
@@ -48,7 +56,9 @@ export function Navbar() {
     <header className="relative z-30 bg-white/95 backdrop-blur">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-3 sm:gap-4 sm:px-6" aria-label="Điều hướng chính">
         <Link to="/" className="flex shrink-0 items-center gap-1 whitespace-nowrap font-brand text-lg font-extrabold text-navy sm:gap-1.5 sm:text-xl">
-          <MapPin className="size-6 fill-gold text-navy" />
+          {logoUrl && !logoFailed
+            ? <img src={resolveUploadUrl(logoUrl)} alt="Culture Quest" className="size-8 rounded-lg object-contain" onError={() => setLogoFailed(true)} />
+            : <MapPin className="size-6 fill-gold text-navy" aria-hidden />}
           <span>Culture Quest</span>
         </Link>
         <div className="hidden items-center gap-8 md:flex">

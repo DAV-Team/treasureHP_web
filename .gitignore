@@ -35,6 +35,9 @@ pnpm-debug.log*
 mongo-data/
 data/db/
 
+# ---- Files uploaded through the app in local dev (server/UPLOAD_DIR) ----
+server/uploads/
+
 # ---- OS files ----
 .DS_Store
 Thumbs.db
