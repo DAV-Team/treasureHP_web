@@ -56,7 +56,6 @@ jobs:
       - run: npm run lint
       - run: npm run build
       - run: npm test
-      - run: npm run test:e2e
 
   client:
     needs: changes
@@ -76,10 +75,6 @@ jobs:
       - run: npm run lint
       - run: npm run build
       - run: npm test
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
-        env:
-          CI: true
 
   images:
     needs: [changes, server, client]

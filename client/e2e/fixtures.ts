@@ -8,6 +8,8 @@ const BLANK_TILE = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAA
 export const test = base.extend<{ stubExternalNetwork: void }>({
   stubExternalNetwork: [async ({ page }, use) => {
     await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.fulfill({ status: 200, contentType: 'text/css', body: '' }));
+    // The navbar loads the site logo on every page; tests that care about it override this route.
+    await page.route('http://localhost:3000/settings', (route) => route.fulfill({ json: { logoUrl: null } }));
     await page.route(/tile\.openstreetmap\.(org|fr)|basemaps\.cartocdn\.com/, (route) => route.fulfill({ status: 200, contentType: 'image/png', body: BLANK_TILE }));
     await use();
   }, { auto: true }],
