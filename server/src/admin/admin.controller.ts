@@ -7,7 +7,7 @@ import { AdminGuard, ADMIN_ONLY } from './admin.guard.js';
 import { AdminUpdateUserDto } from './dto/update-user.dto.js';
 import { AdminService } from './admin.service.js';
 
-const maxLogoBytes = 2 * 1024 * 1024;
+const maxLogoBytes = 3 * 1024 * 1024;
 const logoFileInterceptor = FileInterceptor('logo', { storage: memoryStorage(), limits: { fileSize: maxLogoBytes } });
 const logoFileValidation = new ParseFilePipeBuilder()
   .addFileTypeValidator({ fileType: /^image\/(png|jpe?g|webp|svg\+xml)$/, skipMagicNumbersValidation: true })

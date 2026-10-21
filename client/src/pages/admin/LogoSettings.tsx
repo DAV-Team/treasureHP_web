@@ -6,7 +6,7 @@ import { describeApiError } from '../../lib/apiError';
 import { resolveUploadUrl } from '../../lib/uploads';
 import { getAppSettings, resetLogo, uploadLogo } from '../../services/settings';
 
-const maxBytes = 2 * 1024 * 1024;
+const maxBytes = 3 * 1024 * 1024;
 const acceptedTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
 
 // Lets an admin replace the icon + wordmark the Navbar falls back to with an uploaded image.
@@ -27,7 +27,7 @@ export function LogoSettings() {
     if (!file) return;
     setError('');
     if (!acceptedTypes.includes(file.type)) { setError('Chỉ chấp nhận ảnh PNG, JPG, WEBP hoặc SVG.'); return; }
-    if (file.size > maxBytes) { setError('Ảnh phải nhỏ hơn 2MB.'); return; }
+    if (file.size > maxBytes) { setError('Ảnh phải nhỏ hơn 3MB.'); return; }
     setBusy(true);
     try {
       setLogoUrl((await uploadLogo(file)).logoUrl);
@@ -58,7 +58,7 @@ export function LogoSettings() {
         </span>
         <div>
           <h2 className="font-extrabold text-[#12294D]">Logo trang web</h2>
-          <p className="text-sm text-slate-600">PNG, JPG, WEBP hoặc SVG, tối đa 2MB. Hiển thị ở thanh điều hướng cho mọi người dùng.</p>
+          <p className="text-sm text-slate-600">PNG, JPG, WEBP hoặc SVG, tối đa 3MB. Hiển thị ở thanh điều hướng cho mọi người dùng.</p>
           {error && <p role="alert" className="mt-1 text-sm font-semibold text-rose-600">{error}</p>}
         </div>
       </div>

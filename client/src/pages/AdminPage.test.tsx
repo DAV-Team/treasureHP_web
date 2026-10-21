@@ -242,8 +242,8 @@ describe('AdminPage', () => {
       const input = await screen.findByLabelText('Tải logo lên');
       fireEvent.change(input, { target: { files: [file('text/plain')] } });
       expect(await screen.findByRole('alert')).toHaveTextContent('Chỉ chấp nhận ảnh PNG, JPG, WEBP hoặc SVG.');
-      fireEvent.change(input, { target: { files: [file('image/png', 3 * 1024 * 1024)] } });
-      expect(await screen.findByRole('alert')).toHaveTextContent('Ảnh phải nhỏ hơn 2MB.');
+      fireEvent.change(input, { target: { files: [file('image/png', 4 * 1024 * 1024)] } });
+      expect(await screen.findByRole('alert')).toHaveTextContent('Ảnh phải nhỏ hơn 3MB.');
       expect(uploadLogo).not.toHaveBeenCalled();
     });
 

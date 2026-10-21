@@ -67,7 +67,7 @@ describe('Site logo (e2e)', () => {
   it('rejects a missing file, the wrong type and an oversized file', async () => {
     await http().post('/admin/settings/logo').set(auth(adminToken)).expect(400);
     await http().post('/admin/settings/logo').set(auth(adminToken)).attach('logo', Buffer.from('not an image'), { filename: 'logo.txt', contentType: 'text/plain' }).expect(400);
-    await http().post('/admin/settings/logo').set(auth(adminToken)).attach('logo', Buffer.alloc(2 * 1024 * 1024 + 1), { filename: 'logo.png', contentType: 'image/png' }).expect(413);
+    await http().post('/admin/settings/logo').set(auth(adminToken)).attach('logo', Buffer.alloc(3 * 1024 * 1024 + 1), { filename: 'logo.png', contentType: 'image/png' }).expect(413);
   });
 
   it('uploads, serves, replaces and clears the logo, cleaning up the old file each time', async () => {
