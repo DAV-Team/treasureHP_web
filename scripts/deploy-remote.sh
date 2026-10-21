@@ -20,6 +20,13 @@ pull=""
 if [ -n "${SERVER_IMAGE:-}" ]; then set_env SERVER_IMAGE "$SERVER_IMAGE"; pull="$pull server"; fi
 if [ -n "${CLIENT_IMAGE:-}" ]; then set_env CLIENT_IMAGE "$CLIENT_IMAGE"; pull="$pull client"; fi
 
+# Caller passes SERVER_IMAGE/CLIENT_IMAGE empty (not absent) when that side did not change. Compose
+# resolves ${VAR:-default} from the process environment before --env-file, so an *empty* exported
+# variable would shadow the real value just written to $ENV_FILE and force compose back onto
+# docker-compose.prod.yml's unpushable `:latest` default. Unsetting lets compose read $ENV_FILE instead.
+[ -n "${SERVER_IMAGE:-}" ] || unset SERVER_IMAGE
+[ -n "${CLIENT_IMAGE:-}" ] || unset CLIENT_IMAGE
+
 # This script always runs with --no-build, so compose can never fall back to building locally. If either
 # image is somehow missing from $ENV_FILE (e.g. a run that only touched one side left the other unset),
 # stop here rather than let `up` recreate that container against docker-compose.prod.yml's unpushable
@@ -56,6 +63,9 @@ if ! healthy; then
   $dc logs --tail 40 server >&2 || true
   set_env SERVER_IMAGE "$previous_server"
   set_env CLIENT_IMAGE "$previous_client"
+  # Same shadowing as above: unset so this up reads the just-restored values from $ENV_FILE, not
+  # whatever (now-broken) image this run originally exported.
+  unset SERVER_IMAGE CLIENT_IMAGE
   $dc up -d --no-build
   exit 1
 fi
