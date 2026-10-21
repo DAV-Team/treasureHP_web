@@ -39,10 +39,10 @@ describe('Navbar', () => {
   });
 
   it('shows the default mark until a custom logo loads, then swaps to it', async () => {
-    vi.spyOn(settingsApi, 'getAppSettings').mockResolvedValue({ logoUrl: '/uploads/branding/x.png' });
+    vi.spyOn(settingsApi, 'getAppSettings').mockResolvedValue({ logoUrl: 'https://cdn.example.com/logo.png' });
     renderNavbar();
     const image = await screen.findByRole('img', { name: 'Culture Quest' });
-    expect(image).toHaveAttribute('src', expect.stringContaining('/uploads/branding/x.png'));
+    expect(image).toHaveAttribute('src', 'https://cdn.example.com/logo.png');
     vi.restoreAllMocks();
   });
 

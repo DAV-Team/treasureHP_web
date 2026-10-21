@@ -7,7 +7,6 @@ import { Challenge, ChallengeSchema } from '../challenges/schemas/challenge.sche
 import { Location, LocationSchema } from '../locations/schemas/location.schema.js';
 import { UserProgress, UserProgressSchema } from '../progress/schemas/user-progress.schema.js';
 import { SettingsModule } from '../settings/settings.module.js';
-import { UploadsModule } from '../uploads/uploads.module.js';
 import { User, UserSchema } from '../users/schemas/user.schema.js';
 import { AdminController } from './admin.controller.js';
 import { AdminGuard } from './admin.guard.js';
@@ -20,7 +19,6 @@ import { AdminService } from './admin.service.js';
       { name: User.name, schema: UserSchema }, { name: Location.name, schema: LocationSchema }, { name: Challenge.name, schema: ChallengeSchema }, { name: Badge.name, schema: BadgeSchema }, { name: UserProgress.name, schema: UserProgressSchema }, { name: UserBadge.name, schema: UserBadgeSchema },
     ]),
     SettingsModule,
-    UploadsModule,
   ],
   controllers: [AdminController],
   providers: [AdminService, AdminGuard],

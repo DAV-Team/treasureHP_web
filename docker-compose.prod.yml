@@ -27,10 +27,6 @@ services:
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@culturequest.local}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env.production}
-      UPLOAD_DIR: /app/uploads
-    volumes:
-      # Uploaded files (e.g. the site logo) must survive `up -d --build` and container recreation.
-      - culture_quest_uploads:/app/uploads
     depends_on:
       mongo:
         condition: service_healthy
@@ -72,4 +68,3 @@ services:
 
 volumes:
   culture_quest_mongo_data:
-  culture_quest_uploads:

@@ -4,7 +4,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { MemoryRouter } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
 import { createAdminContent, deleteAdminContent, deleteAdminUser, updateAdminContent, updateAdminUser } from '../services/admin';
-import { getAppSettings, resetLogo, uploadLogo } from '../services/settings';
+import { getAppSettings, setLogoUrl } from '../services/settings';
 import { adminUser, makeAuthContext } from '../test/authContext';
 import { AdminPage } from './AdminPage';
 
@@ -35,8 +35,7 @@ vi.mock('../services/admin', () => ({
 
 vi.mock('../services/settings', () => ({
   getAppSettings: vi.fn().mockResolvedValue({ logoUrl: null }),
-  uploadLogo: vi.fn().mockResolvedValue({ logoUrl: '/uploads/branding/new.png' }),
-  resetLogo: vi.fn().mockResolvedValue({ logoUrl: null }),
+  setLogoUrl: vi.fn().mockImplementation(async (logoUrl: string) => ({ logoUrl: logoUrl === '' ? null : logoUrl })),
 }));
 
 function renderAdmin() {
@@ -221,37 +220,34 @@ describe('AdminPage', () => {
   });
 
   describe('logo settings', () => {
-    const file = (type: string, sizeBytes = 100) => {
-      const picked = new File([new Uint8Array(sizeBytes)], 'logo.png', { type });
-      return picked;
-    };
-
-    it('shows the default placeholder, then the logo once uploaded', async () => {
+    it('shows the default placeholder, then the logo once a link is saved', async () => {
       renderAdmin();
-      expect(await screen.findByRole('button', { name: 'Tải logo lên' })).toBeInTheDocument();
+      await screen.findByRole('heading', { name: 'Bảng điều hành' });
       expect(screen.queryByRole('img', { name: 'Logo hiện tại' })).not.toBeInTheDocument();
 
-      fireEvent.change(screen.getByLabelText('Tải logo lên'), { target: { files: [file('image/png')] } });
-      await waitFor(() => expect(uploadLogo).toHaveBeenCalled());
-      expect(await screen.findByRole('img', { name: 'Logo hiện tại' })).toHaveAttribute('src', expect.stringContaining('/uploads/branding/new.png'));
-      expect(screen.getByRole('button', { name: 'Đổi logo' })).toBeInTheDocument();
+      fireEvent.change(screen.getByLabelText('Đường dẫn logo'), { target: { value: 'https://cdn.example.com/logo.png' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Lưu' }));
+      await waitFor(() => expect(setLogoUrl).toHaveBeenCalledWith('https://cdn.example.com/logo.png'));
+      expect(await screen.findByRole('img', { name: 'Logo hiện tại' })).toHaveAttribute('src', 'https://cdn.example.com/logo.png');
+      expect(await screen.findByRole('status')).toHaveTextContent('Đã lưu.');
     });
 
-    it('rejects the wrong file type and an oversized file before calling the API', async () => {
+    it('shows an error from the API instead of silently failing', async () => {
+      vi.mocked(setLogoUrl).mockRejectedValueOnce(new Error('offline'));
       renderAdmin();
-      const input = await screen.findByLabelText('Tải logo lên');
-      fireEvent.change(input, { target: { files: [file('text/plain')] } });
-      expect(await screen.findByRole('alert')).toHaveTextContent('Chỉ chấp nhận ảnh PNG, JPG, WEBP hoặc SVG.');
-      fireEvent.change(input, { target: { files: [file('image/png', 4 * 1024 * 1024)] } });
-      expect(await screen.findByRole('alert')).toHaveTextContent('Ảnh phải nhỏ hơn 3MB.');
-      expect(uploadLogo).not.toHaveBeenCalled();
+      fireEvent.change(await screen.findByLabelText('Đường dẫn logo'), { target: { value: 'https://cdn.example.com/bad.png' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Lưu' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('Không thể kết nối tới máy chủ');
     });
 
-    it('restores the default mark', async () => {
-      vi.mocked(getAppSettings).mockResolvedValueOnce({ logoUrl: '/uploads/branding/current.png' });
+    it('restores the default mark with an empty link', async () => {
+      vi.mocked(getAppSettings).mockResolvedValueOnce({ logoUrl: 'https://cdn.example.com/current.png' });
       renderAdmin();
-      fireEvent.click(await screen.findByRole('button', { name: 'Khôi phục mặc định' }));
-      await waitFor(() => expect(resetLogo).toHaveBeenCalled());
+      const input = await screen.findByLabelText('Đường dẫn logo');
+      expect(input).toHaveValue('https://cdn.example.com/current.png');
+      fireEvent.change(input, { target: { value: '' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Lưu' }));
+      await waitFor(() => expect(setLogoUrl).toHaveBeenCalledWith(''));
       expect(screen.queryByRole('img', { name: 'Logo hiện tại' })).not.toBeInTheDocument();
     });
   });
