@@ -6,13 +6,16 @@ services:
       - culture_quest_mongo_data:/data/db
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh --quiet
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      # Each check spawns mongosh (~100 MB), so poll fast only while starting, then rarely.
+      interval: 5m
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+      start_interval: 3s
 
   server:
     # Fixed image names let `scripts/package.sh --with-images` export them and another machine load them without rebuilding.
-    image: culture-quest-server:latest
+    image: ${SERVER_IMAGE:-culture-quest-server:latest}
     build:
       context: ./server
     restart: unless-stopped
@@ -33,12 +36,14 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(response => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
+      interval: 5m
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+      start_interval: 3s
 
   client:
-    image: culture-quest-client:latest
+    image: ${CLIENT_IMAGE:-culture-quest-client:latest}
     build:
       context: ./client
       args:
@@ -47,7 +52,8 @@ services:
         VITE_GOOGLE_MAPS_MAP_ID: ${VITE_GOOGLE_MAPS_MAP_ID:-}
     restart: unless-stopped
     ports:
-      - '${WEB_PORT:-8080}:80'
+      # WEB_HOST=127.0.0.1 keeps the app reachable only through a host reverse proxy (nginx/Caddy).
+      - '${WEB_HOST:-0.0.0.0}:${WEB_PORT:-8080}:80'
     depends_on:
       server:
         condition: service_healthy

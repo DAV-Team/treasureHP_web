@@ -1,0 +1,173 @@
+name: CI/CD
+
+# Everything heavy (install, test, build images) runs on GitHub runners. The VPS (1 CPU / 1 GB RAM) only
+# pulls the image layers that changed and restarts the containers that changed, in one SSH session.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      # A manual run rebuilds and redeploys everything.
+      server: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.server == 'true' }}
+      client: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.client == 'true' }}
+      compose: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.compose == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            server:
+              - 'server/**'
+            client:
+              - 'client/**'
+            compose:
+              - 'docker-compose.prod.yml'
+              - 'scripts/deploy-remote.sh'
+
+  server:
+    needs: changes
+    if: needs.changes.outputs.server == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci --legacy-peer-deps
+      - run: npm run lint
+      - run: npm run build
+      - run: npm test
+      - run: npm run test:e2e
+
+  client:
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - run: npm ci --legacy-peer-deps
+      - run: npm run lint
+      - run: npm run build
+      - run: npm test
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+        env:
+          CI: true
+
+  images:
+    needs: [changes, server, client]
+    if: >-
+      !cancelled() && !contains(needs.*.result, 'failure')
+      && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+      && (needs.changes.outputs.server == 'true' || needs.changes.outputs.client == 'true')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      server: ${{ steps.names.outputs.server }}
+      client: ${{ steps.names.outputs.client }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Image names (GHCR requires lowercase)
+        id: names
+        run: |
+          prefix="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}"
+          if [ "${{ needs.changes.outputs.server }}" = true ]; then echo "server=$prefix/culture-quest-server:$GITHUB_SHA" >> "$GITHUB_OUTPUT"; fi
+          if [ "${{ needs.changes.outputs.client }}" = true ]; then echo "client=$prefix/culture-quest-client:$GITHUB_SHA" >> "$GITHUB_OUTPUT"; fi
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # The layer cache keeps the dependency layers byte-identical between builds, so a normal code change
+      # makes the VPS download only the small layer with the compiled app.
+      - if: steps.names.outputs.server
+        uses: docker/build-push-action@v6
+        with:
+          context: ./server
+          platforms: linux/amd64
+          push: true
+          provenance: false
+          tags: ${{ steps.names.outputs.server }}
+          cache-from: type=gha,scope=server
+          cache-to: type=gha,mode=max,scope=server
+      - if: steps.names.outputs.client
+        uses: docker/build-push-action@v6
+        with:
+          context: ./client
+          platforms: linux/amd64
+          push: true
+          provenance: false
+          # VITE_* values are baked into the bundle at build time, so they come from repository variables.
+          build-args: |
+            VITE_API_BASE_URL=/api
+            VITE_GOOGLE_MAPS_API_KEY=${{ vars.VITE_GOOGLE_MAPS_API_KEY }}
+            VITE_GOOGLE_MAPS_MAP_ID=${{ vars.VITE_GOOGLE_MAPS_MAP_ID }}
+          tags: ${{ steps.names.outputs.client }}
+          cache-from: type=gha,scope=client
+          cache-to: type=gha,mode=max,scope=client
+
+  deploy:
+    needs: [changes, server, client, images]
+    if: >-
+      !cancelled() && !contains(needs.*.result, 'failure')
+      && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+      && (needs.images.result == 'success' || needs.changes.outputs.compose == 'true')
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: production
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: SSH key
+        run: |
+          install -m 700 -d ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_deploy && chmod 600 ~/.ssh/id_deploy
+          echo "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+      # One SSH session: the token goes first on stdin (never on a command line), then a small tarball
+      # with the compose file and deploy script, which the VPS unpacks and runs.
+      - name: Deploy
+        env:
+          HOST: ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+          SERVER_IMAGE: ${{ needs.images.outputs.server }}
+          CLIENT_IMAGE: ${{ needs.images.outputs.client }}
+        run: |
+          { echo "${{ secrets.GITHUB_TOKEN }}"; tar -cz docker-compose.prod.yml scripts/deploy-remote.sh; } |
+            ssh -i ~/.ssh/id_deploy -o BatchMode=yes "$HOST" \
+              "set -e; cd '$DEPLOY_PATH'; read -r GHCR_TOKEN; tar -xz; \
+               GHCR_TOKEN=\"\$GHCR_TOKEN\" GHCR_USER='${{ github.actor }}' \
+               SERVER_IMAGE='$SERVER_IMAGE' CLIENT_IMAGE='$CLIENT_IMAGE' sh scripts/deploy-remote.sh"
